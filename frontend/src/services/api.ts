@@ -198,11 +198,80 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/warehouses`, {
         headers: getAuthHeaders(),
-        signal: AbortSignal.timeout(1500)
+        signal: AbortSignal.timeout(8000)
       });
       if (res.ok) return await res.json();
     } catch { }
     return mockStore.warehouses;
+  },
+
+  async createWarehouse(data: { name: string; code: string; address?: string }): Promise<Warehouse> {
+    const res = await fetch(`${API_BASE_URL}/warehouses`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Failed to create warehouse' }));
+      throw new Error(err.detail || 'Failed to create warehouse');
+    }
+    return await res.json();
+  },
+
+  async updateWarehouse(id: number, data: { name?: string; code?: string; address?: string }): Promise<Warehouse> {
+    const res = await fetch(`${API_BASE_URL}/warehouses/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Failed to update warehouse' }));
+      throw new Error(err.detail || 'Failed to update warehouse');
+    }
+    return await res.json();
+  },
+
+  async getLocations(warehouseId?: number): Promise<Location[]> {
+    const url = warehouseId ? `${API_BASE_URL}/warehouses/locations?warehouse_id=${warehouseId}` : `${API_BASE_URL}/warehouses/locations`;
+    try {
+      const res = await fetch(url, {
+        headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(8000)
+      });
+      if (res.ok) return await res.json();
+    } catch { }
+    const locs = mockStore.warehouses.flatMap(w => w.locations);
+    return warehouseId ? locs.filter(l => l.warehouse_id === warehouseId) : locs;
+  },
+
+  async createLocation(data: { warehouse_id: number; name: string; code: string }): Promise<Location> {
+    const res = await fetch(`${API_BASE_URL}/warehouses/locations`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Failed to create location' }));
+      throw new Error(err.detail || 'Failed to create location');
+    }
+    return await res.json();
+  },
+
+  async updateLocation(id: number, data: { warehouse_id?: number; name?: string; code?: string }): Promise<Location> {
+    const res = await fetch(`${API_BASE_URL}/warehouses/locations/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: 'Failed to update location' }));
+      throw new Error(err.detail || 'Failed to update location');
+    }
+    return await res.json();
   },
 
   // --- Receipts ---

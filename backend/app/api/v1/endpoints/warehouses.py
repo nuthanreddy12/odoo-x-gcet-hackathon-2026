@@ -5,7 +5,7 @@ from app.api.deps import get_db, require_inventory_manager
 from app.models.warehouse import Warehouse, Location
 from app.models.user import User
 from app.schemas.warehouse import (
-    WarehouseCreate, WarehouseOut, LocationCreate, LocationOut
+    WarehouseCreate, WarehouseUpdate, WarehouseOut, LocationCreate, LocationUpdate, LocationOut
 )
 
 router = APIRouter()
@@ -54,3 +54,61 @@ def create_location(
     db.commit()
     db.refresh(loc)
     return loc
+
+
+@router.put("/locations/{location_id}", response_model=LocationOut)
+def update_location(
+    location_id: int,
+    loc_in: LocationUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_inventory_manager)
+):
+    loc = db.query(Location).filter(Location.id == location_id).first()
+    if not loc:
+        raise HTTPException(status_code=404, detail="Location not found")
+    
+    if loc_in.warehouse_id is not None:
+        wh = db.query(Warehouse).filter(Warehouse.id == loc_in.warehouse_id).first()
+        if not wh:
+            raise HTTPException(status_code=404, detail="Warehouse not found")
+        loc.warehouse_id = loc_in.warehouse_id
+
+    if loc_in.name is not None:
+        loc.name = loc_in.name
+    if loc_in.code is not None:
+        loc.code = loc_in.code
+    if loc_in.is_active is not None:
+        loc.is_active = loc_in.is_active
+
+    db.commit()
+    db.refresh(loc)
+    return loc
+
+
+@router.put("/{warehouse_id}", response_model=WarehouseOut)
+def update_warehouse(
+    warehouse_id: int,
+    wh_in: WarehouseUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_inventory_manager)
+):
+    wh = db.query(Warehouse).filter(Warehouse.id == warehouse_id).first()
+    if not wh:
+        raise HTTPException(status_code=404, detail="Warehouse not found")
+
+    if wh_in.code is not None and wh_in.code != wh.code:
+        existing = db.query(Warehouse).filter(Warehouse.code == wh_in.code).first()
+        if existing:
+            raise HTTPException(status_code=400, detail=f"Warehouse code '{wh_in.code}' already exists")
+        wh.code = wh_in.code
+
+    if wh_in.name is not None:
+        wh.name = wh_in.name
+    if wh_in.address is not None:
+        wh.address = wh_in.address
+    if wh_in.is_active is not None:
+        wh.is_active = wh_in.is_active
+
+    db.commit()
+    db.refresh(wh)
+    return wh
