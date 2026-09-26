@@ -1,0 +1,91 @@
+import React, { useState } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Navbar } from './components/common/Navbar';
+import { Sidebar, NavTab } from './components/common/Sidebar';
+import { Login } from './pages/auth/Login';
+import { SignUp } from './pages/auth/SignUp';
+import { ForgotPassword } from './pages/auth/ForgotPassword';
+import { Dashboard } from './pages/Dashboard';
+import { ProductList } from './pages/products/ProductList';
+import { Receipts } from './pages/operations/Receipts';
+import { Deliveries } from './pages/operations/Deliveries';
+import { Transfers } from './pages/operations/Transfers';
+import { Adjustments } from './pages/operations/Adjustments';
+import { StockLedger } from './pages/StockLedger';
+import { Warehouses } from './pages/Warehouses';
+import { Product } from './types';
+
+const MainApp: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  const [authView, setAuthView] = useState<'LOGIN' | 'SIGNUP' | 'FORGOT'>('LOGIN');
+  const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
+  const [quickReceiptProduct, setQuickReceiptProduct] = useState<Product | null>(null);
+
+  // If not logged in, show auth screens
+  if (!isAuthenticated) {
+    if (authView === 'SIGNUP') {
+      return <SignUp onNavigateLogin={() => setAuthView('LOGIN')} />;
+    }
+    if (authView === 'FORGOT') {
+      return <ForgotPassword onNavigateLogin={() => setAuthView('LOGIN')} />;
+    }
+    return (
+      <Login
+        onNavigateSignUp={() => setAuthView('SIGNUP')}
+        onNavigateForgotPassword={() => setAuthView('FORGOT')}
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased">
+      <Navbar />
+
+      <div className="flex flex-1">
+        <Sidebar
+          currentTab={currentTab}
+          onTabChange={setCurrentTab}
+          lowStockCount={2}
+        />
+
+        <main className="flex-1 p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
+          {currentTab === 'dashboard' && (
+            <Dashboard
+              onNavigateTab={setCurrentTab}
+              onQuickReceipt={(prod) => {
+                setQuickReceiptProduct(prod);
+                setCurrentTab('receipts');
+              }}
+            />
+          )}
+
+          {currentTab === 'products' && <ProductList />}
+
+          {currentTab === 'receipts' && (
+            <Receipts initialProductToReceive={quickReceiptProduct} />
+          )}
+
+          {currentTab === 'deliveries' && <Deliveries />}
+
+          {currentTab === 'transfers' && <Transfers />}
+
+          {currentTab === 'adjustments' && <Adjustments />}
+
+          {currentTab === 'ledger' && <StockLedger />}
+
+          {currentTab === 'warehouses' && <Warehouses />}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export function App() {
+  return (
+    <AuthProvider>
+      <MainApp />
+    </AuthProvider>
+  );
+}
+
+export default App;
