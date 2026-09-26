@@ -30,3 +30,47 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
+
+
+def require_user(user: Optional[User] = Depends(get_current_user)) -> User:
+    """
+    Ensures the request has a valid authenticated user.
+    """
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
+def require_roles(*allowed_roles: str):
+    """
+    RBAC dependency factory.
+    Allowed roles:
+    - 'inventory_manager' (and 'admin') -> Full access
+    - 'warehouse_staff' -> Operational access only
+    """
+    def role_checker(user: User = Depends(require_user)) -> User:
+        user_role = (user.role or "").lower().strip()
+        effective_roles = {user_role}
+        if user_role == "admin":
+            effective_roles.add("inventory_manager")
+
+        normalized_allowed = {r.lower().strip() for r in allowed_roles}
+        if "inventory_manager" in normalized_allowed:
+            normalized_allowed.add("admin")
+
+        if not effective_roles.intersection(normalized_allowed):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied: Action requires one of {list(allowed_roles)} privileges."
+            )
+        return user
+    return role_checker
+
+
+# Role shortcut dependencies
+require_inventory_manager = require_roles("inventory_manager")
+require_warehouse_staff = require_roles("warehouse_staff", "inventory_manager")

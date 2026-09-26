@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, require_inventory_manager
 from app.models.product import Product, StockLevel
 from app.models.category import Category
 from app.models.user import User
@@ -21,7 +21,11 @@ def list_categories(db: Session = Depends(get_db)):
 
 
 @router.post("/categories", response_model=CategoryOut, status_code=status.HTTP_201_CREATED)
-def create_category(category_in: CategoryCreate, db: Session = Depends(get_db)):
+def create_category(
+    category_in: CategoryCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_inventory_manager)
+):
     existing = db.query(Category).filter(Category.name == category_in.name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Category already exists")
@@ -100,7 +104,7 @@ def list_products(
 def create_product(
     prod_in: ProductCreate,
     db: Session = Depends(get_db),
-    user: Optional[User] = Depends(get_current_user)
+    user: User = Depends(require_inventory_manager)
 ):
     existing = db.query(Product).filter(Product.sku == prod_in.sku).first()
     if existing:
@@ -153,7 +157,12 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{product_id}", response_model=ProductOut)
-def update_product(product_id: int, prod_in: ProductUpdate, db: Session = Depends(get_db)):
+def update_product(
+    product_id: int,
+    prod_in: ProductUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_inventory_manager)
+):
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")

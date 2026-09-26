@@ -60,10 +60,14 @@ def validate_receipt(db: Session, receipt_id: int, user_id: Optional[int] = None
     receipt = db.query(Receipt).filter(Receipt.id == receipt_id).first()
     if not receipt:
         raise HTTPException(status_code=404, detail="Receipt not found")
-    if receipt.status == "VALIDATED":
-        raise HTTPException(status_code=400, detail="Receipt is already validated")
+    if receipt.status in ["DONE", "VALIDATED"]:
+        raise HTTPException(status_code=400, detail="Receipt is already completed")
     if receipt.status == "CANCELLED":
         raise HTTPException(status_code=400, detail="Cannot validate a cancelled receipt")
+
+    # If responsible user not yet set and user_id is provided, assign
+    if not receipt.responsible_user_id and user_id:
+        receipt.responsible_user_id = user_id
 
     # Process each item
     for item in receipt.items:
@@ -81,11 +85,11 @@ def validate_receipt(db: Session, receipt_id: int, user_id: Optional[int] = None
             action_type="RECEIPT",
             doc_type="Receipt",
             doc_number=receipt.receipt_number,
-            user_id=user_id,
+            user_id=user_id or receipt.responsible_user_id,
             notes=f"Receipt validated from {receipt.supplier_name}"
         )
 
-    receipt.status = "VALIDATED"
+    receipt.status = "DONE"
     receipt.validated_at = datetime.utcnow()
     db.commit()
     db.refresh(receipt)
@@ -96,10 +100,14 @@ def validate_delivery(db: Session, delivery_id: int, user_id: Optional[int] = No
     delivery = db.query(Delivery).filter(Delivery.id == delivery_id).first()
     if not delivery:
         raise HTTPException(status_code=404, detail="Delivery order not found")
-    if delivery.status == "VALIDATED":
-        raise HTTPException(status_code=400, detail="Delivery is already validated/shipped")
+    if delivery.status in ["DONE", "VALIDATED"]:
+        raise HTTPException(status_code=400, detail="Delivery is already completed/shipped")
     if delivery.status == "CANCELLED":
         raise HTTPException(status_code=400, detail="Cannot validate a cancelled delivery")
+
+    # If responsible user not yet set and user_id is provided, assign
+    if not delivery.responsible_user_id and user_id:
+        delivery.responsible_user_id = user_id
 
     # Check stock availability for all items before applying deduction
     for item in delivery.items:
@@ -128,11 +136,11 @@ def validate_delivery(db: Session, delivery_id: int, user_id: Optional[int] = No
             action_type="DELIVERY",
             doc_type="Delivery",
             doc_number=delivery.delivery_number,
-            user_id=user_id,
+            user_id=user_id or delivery.responsible_user_id,
             notes=f"Delivery dispatched to {delivery.customer_name}"
         )
 
-    delivery.status = "VALIDATED"
+    delivery.status = "DONE"
     delivery.validated_at = datetime.utcnow()
     db.commit()
     db.refresh(delivery)

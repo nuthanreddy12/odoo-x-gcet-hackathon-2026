@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Warehouse, Location } from '../types';
-import { Warehouse as WarehouseIcon, MapPin, Layers, CheckCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Warehouse as WarehouseIcon, MapPin, Layers, CheckCircle, ShieldAlert } from 'lucide-react';
 
 export const Warehouses: React.FC = () => {
+  const { isManager } = useAuth();
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,6 +18,21 @@ export const Warehouses: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* RBAC Notice for non-managers */}
+      {!isManager && (
+        <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200/80 text-amber-900 text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>Read-Only Access:</strong> Warehouse & location topology administration is reserved for Inventory Managers.
+            </span>
+          </div>
+          <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-amber-100 font-semibold text-amber-800">
+            STAFF VIEW
+          </span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
         <div>

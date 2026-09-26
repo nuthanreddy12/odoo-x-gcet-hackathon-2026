@@ -1,7 +1,7 @@
 export type StockStatus = 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
 export type MovementAction = 'RECEIPT' | 'DELIVERY' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'ADJUSTMENT' | 'INITIAL';
-export type ReceiptStatus = 'DRAFT' | 'VALIDATED' | 'CANCELLED';
-export type DeliveryStatus = 'DRAFT' | 'PICKING' | 'PACKING' | 'VALIDATED' | 'CANCELLED';
+export type ReceiptStatus = 'DRAFT' | 'READY' | 'DONE' | 'CANCELLED';
+export type DeliveryStatus = 'DRAFT' | 'WAITING' | 'READY' | 'DONE' | 'CANCELLED';
 export type TransferStatus = 'DRAFT' | 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
 
 export interface User {
@@ -83,6 +83,9 @@ export interface Receipt {
   supplier_name: string;
   status: ReceiptStatus;
   receipt_date: string;
+  scheduled_date?: string;
+  responsible_user_id?: number;
+  responsible_user_name?: string;
   notes?: string;
   created_at: string;
   validated_at?: string;
@@ -105,6 +108,9 @@ export interface Delivery {
   customer_name: string;
   status: DeliveryStatus;
   delivery_date: string;
+  scheduled_date?: string;
+  responsible_user_id?: number;
+  responsible_user_name?: string;
   shipping_address?: string;
   notes?: string;
   created_at: string;
@@ -179,6 +185,10 @@ export interface DashboardKPI {
   pending_receipts: number;
   pending_deliveries: number;
   scheduled_transfers: number;
+  receipts_to_receive?: number;
+  deliveries_to_deliver?: number;
+  late_operations?: number;
+  waiting_operations?: number;
 }
 
 export interface CategoryStock {
@@ -187,9 +197,46 @@ export interface CategoryStock {
   total_quantity: number;
 }
 
+export interface MovementTrend {
+  date: string;
+  receipts: number;
+  deliveries: number;
+  transfers: number;
+}
+
+export interface OperationSummary {
+  operation_type: string;
+  total_count: number;
+  to_process: number;
+  late_count: number;
+  waiting_count: number;
+}
+
+export interface DashboardDocumentItem {
+  id: number;
+  document_type: string;
+  document_number: string;
+  status: string;
+  partner_or_reference?: string;
+  warehouse_id?: number;
+  warehouse_name?: string;
+  location_id?: number;
+  location_name?: string;
+  category_id?: number;
+  category_name?: string;
+  scheduled_date?: string;
+  is_late: boolean;
+  items_count: number;
+  total_quantity: number;
+  created_at: string;
+}
+
 export interface DashboardSummary {
   kpis: DashboardKPI;
+  operation_summaries?: OperationSummary[];
+  operations?: DashboardDocumentItem[];
   low_stock_items: Product[];
   category_distribution: CategoryStock[];
+  movement_trends?: MovementTrend[];
   recent_movements: StockLedgerEntry[];
 }

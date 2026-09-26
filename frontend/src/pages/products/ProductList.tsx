@@ -4,10 +4,17 @@ import { Product, Category, Warehouse } from '../../types';
 import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import {
-  Package, Plus, Search, MapPin, AlertCircle, CheckCircle, Tag
+  Package, Plus, Search, MapPin, AlertCircle, CheckCircle, Tag, Boxes
 } from 'lucide-react';
+import { NavTab } from '../../components/common/Sidebar';
+import { useAuth } from '../../context/AuthContext';
 
-export const ProductList: React.FC = () => {
+interface ProductListProps {
+  onNavigateTab?: (tab: NavTab) => void;
+}
+
+export const ProductList: React.FC<ProductListProps> = ({ onNavigateTab }) => {
+  const { isManager } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -105,13 +112,26 @@ export const ProductList: React.FC = () => {
             Manage SKU profiles, multi-location stock availability, and automated safety buffers
           </p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Product SKU</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          {onNavigateTab && (
+            <button
+              onClick={() => onNavigateTab('stock')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors border border-slate-200"
+            >
+              <Boxes className="w-4 h-4 text-brand-600" />
+              <span>Dedicated Stock View</span>
+            </button>
+          )}
+          {isManager && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Product SKU</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search and Filters */}

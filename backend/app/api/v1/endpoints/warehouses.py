@@ -1,8 +1,9 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db
+from app.api.deps import get_db, require_inventory_manager
 from app.models.warehouse import Warehouse, Location
+from app.models.user import User
 from app.schemas.warehouse import (
     WarehouseCreate, WarehouseOut, LocationCreate, LocationOut
 )
@@ -16,7 +17,11 @@ def list_warehouses(db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=WarehouseOut, status_code=status.HTTP_201_CREATED)
-def create_warehouse(wh_in: WarehouseCreate, db: Session = Depends(get_db)):
+def create_warehouse(
+    wh_in: WarehouseCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_inventory_manager)
+):
     existing = db.query(Warehouse).filter(Warehouse.code == wh_in.code).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"Warehouse code '{wh_in.code}' already exists")
@@ -36,7 +41,11 @@ def list_locations(warehouse_id: int = None, db: Session = Depends(get_db)):
 
 
 @router.post("/locations", response_model=LocationOut, status_code=status.HTTP_201_CREATED)
-def create_location(loc_in: LocationCreate, db: Session = Depends(get_db)):
+def create_location(
+    loc_in: LocationCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_inventory_manager)
+):
     wh = db.query(Warehouse).filter(Warehouse.id == loc_in.warehouse_id).first()
     if not wh:
         raise HTTPException(status_code=404, detail="Warehouse not found")

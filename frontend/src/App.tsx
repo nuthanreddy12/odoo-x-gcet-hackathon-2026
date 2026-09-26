@@ -13,6 +13,7 @@ import { Transfers } from './pages/operations/Transfers';
 import { Adjustments } from './pages/operations/Adjustments';
 import { StockLedger } from './pages/StockLedger';
 import { Warehouses } from './pages/Warehouses';
+import { StockView } from './pages/inventory/StockView';
 import { Product } from './types';
 
 const MainApp: React.FC = () => {
@@ -59,7 +60,9 @@ const MainApp: React.FC = () => {
             />
           )}
 
-          {currentTab === 'products' && <ProductList />}
+          {currentTab === 'stock' && <StockView onNavigateTab={setCurrentTab} />}
+
+          {currentTab === 'products' && <ProductList onNavigateTab={setCurrentTab} />}
 
           {currentTab === 'receipts' && (
             <Receipts initialProductToReceive={quickReceiptProduct} />

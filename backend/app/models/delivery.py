@@ -10,14 +10,17 @@ class Delivery(Base):
     id = Column(Integer, primary_key=True, index=True)
     delivery_number = Column(String(50), unique=True, index=True, nullable=False) # e.g. DEL-2026-001
     customer_name = Column(String(200), nullable=False)
-    status = Column(String(30), default="DRAFT", index=True) # DRAFT, PICKING, PACKING, VALIDATED, CANCELLED
+    status = Column(String(30), default="DRAFT", index=True) # DRAFT, WAITING, READY, DONE, CANCELLED
     delivery_date = Column(DateTime, default=datetime.utcnow)
+    scheduled_date = Column(DateTime, default=datetime.utcnow)
+    responsible_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     shipping_address = Column(String(255), nullable=True)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     validated_at = Column(DateTime, nullable=True)
 
     # Relationships
+    responsible_user = relationship("User", foreign_keys=[responsible_user_id])
     items = relationship("DeliveryItem", back_populates="delivery", cascade="all, delete-orphan")
 
 

@@ -9,7 +9,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onSearchChange }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isManager } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   return (
@@ -62,15 +62,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchChange }) => {
             </div>
             <div className="hidden md:block text-left">
               <p className="text-xs font-semibold text-slate-800 leading-none">{user?.full_name || 'Inventory Admin'}</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">{user?.role?.replace('_', ' ') || 'Manager'}</p>
+              <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                {isManager ? 'Inventory Manager' : 'Warehouse Staff'}
+              </p>
             </div>
           </button>
 
           {showProfileMenu && (
             <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white p-2 shadow-xl border border-slate-100 ring-1 ring-slate-900/5">
               <div className="px-3 py-2 border-b border-slate-100">
-                <p className="text-xs font-medium text-slate-900">{user?.full_name}</p>
-                <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-slate-900">{user?.full_name}</p>
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                    isManager ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-cyan-50 text-cyan-700 border border-cyan-200'
+                  }`}>
+                    {isManager ? 'Manager' : 'Staff'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 truncate mt-0.5">{user?.email}</p>
               </div>
               <div className="py-1">
                 <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600">

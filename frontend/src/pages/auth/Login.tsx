@@ -8,7 +8,7 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ onNavigateSignUp, onNavigateForgotPassword }) => {
-  const { login, demoLogin } = useAuth();
+  const { login, demoLogin, demoLoginStaff } = useAuth();
   const [email, setEmail] = useState('admin@stocksense.io');
   const [password, setPassword] = useState('admin123');
   const [loading, setLoading] = useState(false);
@@ -78,18 +78,29 @@ export const Login: React.FC<LoginProps> = ({ onNavigateSignUp, onNavigateForgot
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100" /></div>
           <div className="relative flex justify-center text-[10px] uppercase text-slate-400 font-semibold bg-white px-2">
-            Instant Demo Access
+            Instant Demo RBAC Access
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={demoLogin}
-          className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-medium rounded-lg transition-colors border border-slate-200/80"
-        >
-          <Zap className="w-3.5 h-3.5 text-amber-500" />
-          <span>Quick Demo Login (Pre-filled Admin)</span>
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={demoLogin}
+            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 text-xs font-medium rounded-lg transition-colors border border-indigo-200/80"
+          >
+            <Zap className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Inventory Manager</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={demoLoginStaff}
+            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-cyan-50 hover:bg-cyan-100 text-cyan-900 text-xs font-medium rounded-lg transition-colors border border-cyan-200/80"
+          >
+            <Zap className="w-3.5 h-3.5 text-cyan-600" />
+            <span>Warehouse Staff</span>
+          </button>
+        </div>
 
         <div className="mt-6 text-center text-xs text-slate-500">
           Don't have an account?{' '}

@@ -25,6 +25,8 @@ class ReceiptItemOut(ReceiptItemCreate):
 class ReceiptCreate(BaseModel):
     supplier_name: str
     receipt_date: Optional[datetime] = None
+    scheduled_date: Optional[datetime] = None
+    responsible_user_id: Optional[int] = None
     notes: Optional[str] = None
     items: List[ReceiptItemCreate]
 
@@ -35,6 +37,9 @@ class ReceiptOut(BaseModel):
     supplier_name: str
     status: str
     receipt_date: datetime
+    scheduled_date: Optional[datetime] = None
+    responsible_user_id: Optional[int] = None
+    responsible_user_name: Optional[str] = None
     notes: Optional[str] = None
     created_at: datetime
     validated_at: Optional[datetime] = None
@@ -64,6 +69,8 @@ class DeliveryItemOut(DeliveryItemCreate):
 class DeliveryCreate(BaseModel):
     customer_name: str
     delivery_date: Optional[datetime] = None
+    scheduled_date: Optional[datetime] = None
+    responsible_user_id: Optional[int] = None
     shipping_address: Optional[str] = None
     notes: Optional[str] = None
     items: List[DeliveryItemCreate]
@@ -75,6 +82,9 @@ class DeliveryOut(BaseModel):
     customer_name: str
     status: str
     delivery_date: datetime
+    scheduled_date: Optional[datetime] = None
+    responsible_user_id: Optional[int] = None
+    responsible_user_name: Optional[str] = None
     shipping_address: Optional[str] = None
     notes: Optional[str] = None
     created_at: datetime

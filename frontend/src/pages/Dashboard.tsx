@@ -6,10 +6,12 @@ import { StockLevelChart } from '../components/dashboard/StockLevelChart';
 import { MovementSummary } from '../components/dashboard/MovementSummary';
 import { LowStockTable } from '../components/dashboard/LowStockTable';
 import { FilterBar } from '../components/dashboard/FilterBar';
+import { OperationsOverview } from '../components/dashboard/OperationsOverview';
+import { OperationsTable } from '../components/dashboard/OperationsTable';
 import { NavTab } from '../components/common/Sidebar';
 import {
   Boxes, AlertTriangle, XCircle, Truck, Send, ArrowLeftRight,
-  Plus, ArrowUpRight
+  Plus, Clock, AlertCircle
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -23,16 +25,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateTab, onQuickRece
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedWarehouse, setSelectedWarehouse] = useState('');
+  // Dynamic Filters
+  const [selectedDocType, setSelectedDocType] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedWarehouse, setSelectedWarehouse] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   const loadData = async () => {
     setLoading(true);
     try {
+      let warehouse_id: number | undefined;
+      let location_id: number | undefined;
+      if (selectedWarehouse.startsWith('wh-')) {
+        warehouse_id = parseInt(selectedWarehouse.replace('wh-', ''), 10);
+      } else if (selectedWarehouse.startsWith('loc-')) {
+        location_id = parseInt(selectedWarehouse.replace('loc-', ''), 10);
+      }
+
+      const category_id = selectedCategory ? parseInt(selectedCategory, 10) : undefined;
+
       const [sumData, cats, whs] = await Promise.all([
-        api.getDashboardSummary(),
+        api.getDashboardSummary({
+          category_id,
+          warehouse_id,
+          location_id,
+          document_type: selectedDocType || undefined,
+          status: selectedStatus || undefined
+        }),
         api.getCategories(),
         api.getWarehouses()
       ]);
@@ -46,33 +65,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateTab, onQuickRece
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [selectedDocType, selectedStatus, selectedWarehouse, selectedCategory]);
 
   const handleResetFilters = () => {
-    setSelectedCategory('');
-    setSelectedWarehouse('');
+    setSelectedDocType('');
     setSelectedStatus('');
+    setSelectedWarehouse('');
+    setSelectedCategory('');
   };
 
-  if (loading || !summary) {
+  if (loading && !summary) {
     return (
       <div className="flex h-96 items-center justify-center">
         <div className="text-center">
           <div className="w-10 h-10 border-4 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-xs text-slate-500">Loading real-time stock metrics...</p>
+          <p className="text-xs text-slate-500">Loading real-time stock metrics & operational pipeline...</p>
         </div>
       </div>
     );
   }
 
-  // Filter low stock items based on selection
-  let filteredLowStock = summary.low_stock_items;
-  if (selectedCategory) {
-    filteredLowStock = filteredLowStock.filter((i: Product) => i.category_name === selectedCategory);
-  }
-  if (selectedStatus) {
-    filteredLowStock = filteredLowStock.filter((i: Product) => i.stock_status === selectedStatus);
-  }
+  if (!summary) return null;
 
   return (
     <div className="space-y-6">
@@ -81,7 +94,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateTab, onQuickRece
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Executive Stock Overview</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Automated inventory registry, double-entry ledger & active document pipeline
+            Real-time inventory registry, dynamic operational pipeline & warehouse metrics
           </p>
         </div>
 
@@ -118,21 +131,66 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateTab, onQuickRece
         </div>
       </div>
 
-      {/* Filter Bar */}
+      {/* Dynamic Filters Bar */}
       <FilterBar
         categories={categories}
         warehouses={warehouses}
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-        selectedWarehouse={selectedWarehouse}
-        onWarehouseChange={setSelectedWarehouse}
+        selectedDocType={selectedDocType}
+        onDocTypeChange={setSelectedDocType}
         selectedStatus={selectedStatus}
         onStatusChange={setSelectedStatus}
+        selectedWarehouse={selectedWarehouse}
+        onWarehouseChange={setSelectedWarehouse}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
         onReset={handleResetFilters}
       />
 
-      {/* 6 Required Core KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      {/* Required Operational KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Receipts to Receive"
+          value={summary.kpis.receipts_to_receive ?? summary.kpis.pending_receipts}
+          subtitle="Inbound shipments pending receipt"
+          icon={Truck}
+          color="blue"
+          badgeText="To Receive"
+          badgeType="neutral"
+          onClick={() => onNavigateTab('receipts')}
+        />
+        <StatCard
+          title="Deliveries to Deliver"
+          value={summary.kpis.deliveries_to_deliver ?? summary.kpis.pending_deliveries}
+          subtitle="Outbound orders to dispatch"
+          icon={Send}
+          color="indigo"
+          badgeText="To Deliver"
+          badgeType="neutral"
+          onClick={() => onNavigateTab('deliveries')}
+        />
+        <StatCard
+          title="Late Operations"
+          value={summary.kpis.late_operations ?? 0}
+          subtitle="Schedule date passed overdue"
+          icon={Clock}
+          color="rose"
+          badgeText={summary.kpis.late_operations && summary.kpis.late_operations > 0 ? "Past Due" : "All on Time"}
+          badgeType={summary.kpis.late_operations && summary.kpis.late_operations > 0 ? "alert" : "success"}
+        />
+        <StatCard
+          title="Waiting Operations"
+          value={summary.kpis.waiting_operations ?? 0}
+          subtitle="Deliveries waiting for stock"
+          icon={AlertCircle}
+          color="amber"
+          badgeText={summary.kpis.waiting_operations && summary.kpis.waiting_operations > 0 ? "Stock Deficit" : "Available"}
+          badgeType={summary.kpis.waiting_operations && summary.kpis.waiting_operations > 0 ? "warning" : "neutral"}
+          onClick={() => onNavigateTab('deliveries')}
+        />
+      </div>
+
+      {/* Core Inventory Health KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total In Stock"
           value={summary.kpis.total_units_in_stock}
@@ -164,26 +222,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateTab, onQuickRece
           onClick={() => onNavigateTab('products')}
         />
         <StatCard
-          title="Pending Receipts"
-          value={summary.kpis.pending_receipts}
-          subtitle="Draft inbound shipments"
-          icon={Truck}
-          color="blue"
-          badgeText="Inbound"
-          badgeType="neutral"
-          onClick={() => onNavigateTab('receipts')}
-        />
-        <StatCard
-          title="Pending Deliveries"
-          value={summary.kpis.pending_deliveries}
-          subtitle="Orders in pick & pack"
-          icon={Send}
-          color="indigo"
-          badgeText="Outbound"
-          badgeType="neutral"
-          onClick={() => onNavigateTab('deliveries')}
-        />
-        <StatCard
           title="Scheduled Transfers"
           value={summary.kpis.scheduled_transfers}
           subtitle="Inter-facility routing"
@@ -195,15 +233,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigateTab, onQuickRece
         />
       </div>
 
+      {/* Operations Pipeline Summary (Kanban / Cards from Mockup) */}
+      <OperationsOverview
+        summaries={summary.operation_summaries || []}
+        onNavigateTab={onNavigateTab}
+      />
+
+      {/* Filtered Document Pipeline Table */}
+      <OperationsTable
+        documents={summary.operations || []}
+        onNavigateTab={onNavigateTab}
+      />
+
       {/* Analytical Visualizations Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <StockLevelChart data={summary.category_distribution} />
-        <MovementSummary />
+        <MovementSummary trends={summary.movement_trends} />
       </div>
 
       {/* Low Stock Attention & Quick Restock Table */}
       <LowStockTable
-        items={filteredLowStock}
+        items={summary.low_stock_items}
         onTriggerReceipt={(prod: Product) => {
           onQuickReceipt?.(prod);
           onNavigateTab('receipts');

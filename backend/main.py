@@ -18,6 +18,18 @@ def init_db():
     logger.info("Initializing database tables...")
     Base.metadata.create_all(bind=engine)
 
+    # Lightweight migration helper for newly added columns if table already existed
+    with engine.begin() as conn:
+        for tbl in ["receipts", "deliveries"]:
+            try:
+                conn.exec_driver_sql(f"ALTER TABLE {tbl} ADD COLUMN scheduled_date TIMESTAMP")
+            except Exception:
+                pass
+            try:
+                conn.exec_driver_sql(f"ALTER TABLE {tbl} ADD COLUMN responsible_user_id INTEGER")
+            except Exception:
+                pass
+
     # Seed initial test data if database is empty
     db = SessionLocal()
     try:
@@ -123,6 +135,20 @@ def init_db():
 
             db.commit()
             logger.info("Database initialized and sample data seeded successfully.")
+
+        # Ensure demo Warehouse Staff account exists for RBAC
+        staff_user = db.query(User).filter(User.email == "staff@stocksense.io").first()
+        if not staff_user:
+            staff_user = User(
+                email="staff@stocksense.io",
+                full_name="Sam Taylor",
+                hashed_password=get_password_hash("staff123"),
+                role="warehouse_staff",
+                is_active=True
+            )
+            db.add(staff_user)
+            db.commit()
+            logger.info("Warehouse staff account 'staff@stocksense.io' ensured.")
     except Exception as e:
         logger.error(f"Error seeding database: {e}")
         db.rollback()

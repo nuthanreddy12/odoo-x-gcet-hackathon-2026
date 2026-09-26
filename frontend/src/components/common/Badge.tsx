@@ -10,15 +10,17 @@ export const Badge: React.FC<BadgeProps> = ({ status, size = 'sm' }) => {
 
   let colorClasses = 'bg-slate-100 text-slate-700 border-slate-200';
 
-  // Stock Statuses
-  if (normalized === 'IN_STOCK' || normalized === 'COMPLETED' || normalized === 'VALIDATED') {
+  // Operation statuses (requirements-aligned)
+  if (normalized === 'DONE' || normalized === 'COMPLETED' || normalized === 'IN_STOCK') {
     colorClasses = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-  } else if (normalized === 'LOW_STOCK' || normalized === 'PICKING' || normalized === 'PACKING' || normalized === 'SCHEDULED') {
-    colorClasses = 'bg-amber-50 text-amber-700 border-amber-200';
-  } else if (normalized === 'OUT_OF_STOCK' || normalized === 'CANCELLED') {
-    colorClasses = 'bg-rose-50 text-rose-700 border-rose-200';
-  } else if (normalized === 'DRAFT') {
+  } else if (normalized === 'READY') {
     colorClasses = 'bg-blue-50 text-blue-700 border-blue-200';
+  } else if (normalized === 'WAITING' || normalized === 'SCHEDULED' || normalized === 'LOW_STOCK') {
+    colorClasses = 'bg-amber-50 text-amber-700 border-amber-200';
+  } else if (normalized === 'DRAFT') {
+    colorClasses = 'bg-slate-100 text-slate-600 border-slate-200';
+  } else if (normalized === 'CANCELLED' || normalized === 'OUT_OF_STOCK') {
+    colorClasses = 'bg-rose-50 text-rose-700 border-rose-200';
   } else if (normalized === 'RECEIPT' || normalized === 'TRANSFER_IN') {
     colorClasses = 'bg-green-50 text-green-700 border-green-200';
   } else if (normalized === 'DELIVERY' || normalized === 'TRANSFER_OUT') {

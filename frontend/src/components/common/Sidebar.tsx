@@ -1,11 +1,13 @@
 import React from 'react';
+import { useAuth } from '../../context/AuthContext';
 import {
-  LayoutDashboard, Package, Truck, Send, ArrowLeftRight,
-  SlidersHorizontal, BookOpen, Warehouse, AlertTriangle
+  LayoutDashboard, Boxes, Package, Truck, Send, ArrowLeftRight,
+  SlidersHorizontal, BookOpen, Warehouse, AlertTriangle, ShieldCheck
 } from 'lucide-react';
 
 export type NavTab =
   | 'dashboard'
+  | 'stock'
   | 'products'
   | 'receipts'
   | 'deliveries'
@@ -21,27 +23,46 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, lowStockCount = 0 }) => {
-  const navItems: { id: NavTab; label: string; icon: any; badge?: number; badgeColor?: string }[] = [
+  const { user, isManager } = useAuth();
+
+  const allNavItems: { id: NavTab; label: string; icon: any; badge?: number; badgeColor?: string; managerOnly?: boolean }[] = [
     { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
+    { id: 'stock', label: 'Stock View', icon: Boxes },
     { id: 'products', label: 'Product Catalog', icon: Package },
     { id: 'receipts', label: 'Receipts (Inbound)', icon: Truck },
     { id: 'deliveries', label: 'Deliveries (Outbound)', icon: Send },
     { id: 'transfers', label: 'Internal Transfers', icon: ArrowLeftRight },
     { id: 'adjustments', label: 'Stock Adjustments', icon: SlidersHorizontal },
     { id: 'ledger', label: 'Stock Movement Ledger', icon: BookOpen },
-    { id: 'warehouses', label: 'Warehouses & Zones', icon: Warehouse },
+    { id: 'warehouses', label: 'Warehouses & Zones', icon: Warehouse, managerOnly: true },
   ];
+
+  // RBAC: Hide management-only tabs (Warehouses & Zones) from Warehouse Staff
+  const visibleNavItems = allNavItems.filter(item => !item.managerOnly || isManager);
 
   return (
     <aside className="w-64 border-r border-slate-200 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 min-h-[calc(100vh-4rem)]">
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-5">
+        {/* User Role Banner */}
+        <div className="px-3 py-2 bg-slate-800/80 rounded-lg border border-slate-700/60 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${isManager ? 'bg-indigo-400' : 'bg-cyan-400'}`}></span>
+            <span className="text-[11px] font-semibold text-slate-200">
+              {isManager ? 'Inventory Manager' : 'Warehouse Staff'}
+            </span>
+          </div>
+          <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-900/60 text-slate-400 border border-slate-700">
+            {isManager ? 'Full Access' : 'Operational'}
+          </span>
+        </div>
+
         {/* Navigation Section */}
         <div>
           <p className="px-3 text-[11px] font-semibold tracking-wider text-slate-400 uppercase mb-2">
-            Operations & Inventory
+            {isManager ? 'Operations & Inventory' : 'Warehouse Operations'}
           </p>
           <nav className="space-y-1">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentTab === item.id;
               return (
@@ -68,6 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, lowSt
             })}
           </nav>
         </div>
+
 
         {/* Real-time Inventory Guard Box */}
         {lowStockCount > 0 && (

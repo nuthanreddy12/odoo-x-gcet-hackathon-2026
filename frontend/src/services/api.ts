@@ -45,22 +45,38 @@ const getAuthHeaders = () => {
 
 export const api = {
   // --- Dashboard ---
-  async getDashboardSummary(): Promise<DashboardSummary> {
+  async getDashboardSummary(params?: {
+    category_id?: number;
+    warehouse_id?: number;
+    location_id?: number;
+    document_type?: string;
+    status?: string;
+  }): Promise<DashboardSummary> {
+    const queryParts: string[] = [];
+    if (params?.category_id) queryParts.push(`category_id=${params.category_id}`);
+    if (params?.warehouse_id) queryParts.push(`warehouse_id=${params.warehouse_id}`);
+    if (params?.location_id) queryParts.push(`location_id=${params.location_id}`);
+    if (params?.document_type) queryParts.push(`document_type=${encodeURIComponent(params.document_type)}`);
+    if (params?.status) queryParts.push(`status=${encodeURIComponent(params.status)}`);
+    const qs = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+
     try {
-      const res = await fetch(`${API_BASE_URL}/dashboard/summary`, {
+      const res = await fetch(`${API_BASE_URL}/dashboard/summary${qs}`, {
         headers: getAuthHeaders(),
-        signal: AbortSignal.timeout(1500)
+        signal: AbortSignal.timeout(8000)
       });
       if (res.ok) return await res.json();
     } catch {
       // Fallback
     }
 
-    // Dynamic mock summary
+    // Dynamic mock summary fallback
     const totalProducts = mockStore.products.length;
     const totalUnits = mockStore.products.reduce((acc, p) => acc + p.total_stock, 0);
     const lowStock = mockStore.products.filter(p => p.stock_status === 'LOW_STOCK');
     const outOfStock = mockStore.products.filter(p => p.stock_status === 'OUT_OF_STOCK');
+    const pendingReceipts = mockStore.receipts.filter(r => ['DRAFT', 'READY'].includes(r.status)).length;
+    const pendingDeliveries = mockStore.deliveries.filter(d => ['DRAFT', 'WAITING', 'READY', 'PICKING', 'PACKING'].includes(d.status)).length;
 
     return {
       kpis: {
@@ -68,9 +84,13 @@ export const api = {
         total_units_in_stock: totalUnits,
         low_stock_count: lowStock.length,
         out_of_stock_count: outOfStock.length,
-        pending_receipts: mockStore.receipts.filter(r => r.status === 'DRAFT').length,
-        pending_deliveries: mockStore.deliveries.filter(d => ['DRAFT', 'PICKING', 'PACKING'].includes(d.status)).length,
-        scheduled_transfers: mockStore.transfers.filter(t => t.status === 'SCHEDULED').length
+        pending_receipts: pendingReceipts,
+        pending_deliveries: pendingDeliveries,
+        scheduled_transfers: mockStore.transfers.filter(t => t.status === 'SCHEDULED').length,
+        receipts_to_receive: pendingReceipts,
+        deliveries_to_deliver: pendingDeliveries,
+        late_operations: 0,
+        waiting_operations: mockStore.deliveries.filter(d => d.status === 'WAITING').length
       },
       low_stock_items: [...lowStock, ...outOfStock],
       category_distribution: mockStore.categories.map(c => {
@@ -93,7 +113,7 @@ export const api = {
         signal: AbortSignal.timeout(1500)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
     return mockStore.products;
   },
 
@@ -106,7 +126,7 @@ export const api = {
         signal: AbortSignal.timeout(2000)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
 
     const newId = mockStore.products.length + 1;
     const initialQty = Number(productData.initial_stock) || 0;
@@ -169,7 +189,7 @@ export const api = {
         signal: AbortSignal.timeout(1500)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
     return mockStore.categories;
   },
 
@@ -181,7 +201,7 @@ export const api = {
         signal: AbortSignal.timeout(1500)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
     return mockStore.warehouses;
   },
 
@@ -190,11 +210,24 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/receipts`, {
         headers: getAuthHeaders(),
-        signal: AbortSignal.timeout(1500)
+        signal: AbortSignal.timeout(8000)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
     return mockStore.receipts;
+  },
+
+  async getReceipt(receiptId: number): Promise<Receipt> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/receipts/${receiptId}`, {
+        headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(8000)
+      });
+      if (res.ok) return await res.json();
+    } catch { }
+    const rec = mockStore.receipts.find(r => r.id === receiptId);
+    if (!rec) throw new Error('Receipt not found');
+    return rec;
   },
 
   async createReceipt(receiptData: any): Promise<Receipt> {
@@ -206,7 +239,7 @@ export const api = {
         signal: AbortSignal.timeout(2000)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
 
     const newId = mockStore.receipts.length + 1;
     const newReceipt: Receipt = {
@@ -243,11 +276,19 @@ export const api = {
         signal: AbortSignal.timeout(2000)
       });
       if (res.ok) return await res.json();
-    } catch {}
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Validation failed');
+      }
+    } catch (e: any) {
+      if (e.message && e.message !== 'Failed to fetch') throw e;
+    }
 
+    // Mock fallback: only validate if READY
     const receipt = mockStore.receipts.find(r => r.id === receiptId);
     if (!receipt) throw new Error('Receipt not found');
-    receipt.status = 'VALIDATED';
+    if (receipt.status !== 'READY') throw new Error(`Receipt must be READY to validate. Current: ${receipt.status}`);
+    receipt.status = 'DONE';
     receipt.validated_at = new Date().toISOString();
 
     for (const item of receipt.items) {
@@ -289,16 +330,75 @@ export const api = {
     return receipt;
   },
 
+  async markReceiptReady(receiptId: number): Promise<Receipt> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/receipts/${receiptId}/mark_ready`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(2000)
+      });
+      if (res.ok) return await res.json();
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to mark ready');
+      }
+    } catch (e: any) {
+      if (e.message && e.message !== 'Failed to fetch') throw e;
+    }
+    // Mock fallback
+    const receipt = mockStore.receipts.find(r => r.id === receiptId);
+    if (!receipt) throw new Error('Receipt not found');
+    if (receipt.status !== 'DRAFT') throw new Error(`Only DRAFT receipts can be marked Ready. Current: ${receipt.status}`);
+    receipt.status = 'READY';
+    return receipt;
+  },
+
+  async cancelReceipt(receiptId: number): Promise<Receipt> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/receipts/${receiptId}/cancel`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(2000)
+      });
+      if (res.ok) return await res.json();
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to cancel receipt');
+      }
+    } catch (e: any) {
+      if (e.message && e.message !== 'Failed to fetch') throw e;
+    }
+    // Mock fallback
+    const receipt = mockStore.receipts.find(r => r.id === receiptId);
+    if (!receipt) throw new Error('Receipt not found');
+    if (receipt.status === 'DONE') throw new Error('Cannot cancel a completed receipt');
+    receipt.status = 'CANCELLED';
+    return receipt;
+  },
+
   // --- Deliveries ---
   async getDeliveries(): Promise<Delivery[]> {
     try {
       const res = await fetch(`${API_BASE_URL}/deliveries`, {
         headers: getAuthHeaders(),
-        signal: AbortSignal.timeout(1500)
+        signal: AbortSignal.timeout(8000)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
     return mockStore.deliveries;
+  },
+
+  async getDelivery(deliveryId: number): Promise<Delivery> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/deliveries/${deliveryId}`, {
+        headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(8000)
+      });
+      if (res.ok) return await res.json();
+    } catch { }
+    const del = mockStore.deliveries.find(d => d.id === deliveryId);
+    if (!del) throw new Error('Delivery not found');
+    return del;
   },
 
   async createDelivery(deliveryData: any): Promise<Delivery> {
@@ -310,7 +410,7 @@ export const api = {
         signal: AbortSignal.timeout(2000)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
 
     const newId = mockStore.deliveries.length + 1;
     const newDelivery: Delivery = {
@@ -347,11 +447,84 @@ export const api = {
         signal: AbortSignal.timeout(2000)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
 
     const delivery = mockStore.deliveries.find(d => d.id === deliveryId);
     if (!delivery) throw new Error('Delivery not found');
     delivery.status = status as any;
+    return delivery;
+  },
+
+  async checkDeliveryAvailability(deliveryId: number): Promise<Delivery> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/deliveries/${deliveryId}/check_availability`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(2000)
+      });
+      if (res.ok) return await res.json();
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Availability check failed');
+      }
+    } catch (e: any) {
+      if (e.message && e.message !== 'Failed to fetch') throw e;
+    }
+    // Mock fallback: check if all items have stock
+    const delivery = mockStore.deliveries.find(d => d.id === deliveryId);
+    if (!delivery) throw new Error('Delivery not found');
+    let allAvailable = true;
+    for (const item of delivery.items) {
+      const prod = mockStore.products.find(p => p.id === item.product_id);
+      const totalStock = prod?.total_stock ?? 0;
+      if (totalStock < item.quantity) { allAvailable = false; break; }
+    }
+    delivery.status = allAvailable ? 'READY' : 'WAITING';
+    return delivery;
+  },
+
+  async markDeliveryReady(deliveryId: number): Promise<Delivery> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/deliveries/${deliveryId}/mark_ready`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(2000)
+      });
+      if (res.ok) return await res.json();
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to mark delivery ready');
+      }
+    } catch (e: any) {
+      if (e.message && e.message !== 'Failed to fetch') throw e;
+    }
+    // Mock fallback
+    const delivery = mockStore.deliveries.find(d => d.id === deliveryId);
+    if (!delivery) throw new Error('Delivery not found');
+    delivery.status = 'READY';
+    return delivery;
+  },
+
+  async cancelDelivery(deliveryId: number): Promise<Delivery> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/deliveries/${deliveryId}/cancel`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(2000)
+      });
+      if (res.ok) return await res.json();
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to cancel delivery');
+      }
+    } catch (e: any) {
+      if (e.message && e.message !== 'Failed to fetch') throw e;
+    }
+    // Mock fallback
+    const delivery = mockStore.deliveries.find(d => d.id === deliveryId);
+    if (!delivery) throw new Error('Delivery not found');
+    if (delivery.status === 'DONE') throw new Error('Cannot cancel a completed delivery');
+    delivery.status = 'CANCELLED';
     return delivery;
   },
 
@@ -363,10 +536,18 @@ export const api = {
         signal: AbortSignal.timeout(2000)
       });
       if (res.ok) return await res.json();
-    } catch {}
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Validation failed');
+      }
+    } catch (e: any) {
+      if (e.message && e.message !== 'Failed to fetch') throw e;
+    }
 
+    // Mock fallback: only validate if READY
     const delivery = mockStore.deliveries.find(d => d.id === deliveryId);
     if (!delivery) throw new Error('Delivery not found');
+    if (delivery.status !== 'READY') throw new Error(`Delivery must be READY to validate. Current: ${delivery.status}`);
 
     for (const item of delivery.items) {
       const prod = mockStore.products.find(p => p.id === item.product_id);
@@ -396,7 +577,7 @@ export const api = {
       }
     }
 
-    delivery.status = 'VALIDATED';
+    delivery.status = 'DONE';
     delivery.validated_at = new Date().toISOString();
     return delivery;
   },
@@ -409,7 +590,7 @@ export const api = {
         signal: AbortSignal.timeout(1500)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
     return mockStore.transfers;
   },
 
@@ -422,7 +603,7 @@ export const api = {
         signal: AbortSignal.timeout(2000)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
 
     const newId = mockStore.transfers.length + 1;
     const newTransfer: InternalTransfer = {
@@ -457,7 +638,7 @@ export const api = {
         signal: AbortSignal.timeout(2000)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
 
     const transfer = mockStore.transfers.find(t => t.id === transferId);
     if (!transfer) throw new Error('Transfer not found');
@@ -538,7 +719,7 @@ export const api = {
         signal: AbortSignal.timeout(1500)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
     return mockStore.adjustments;
   },
 
@@ -548,10 +729,16 @@ export const api = {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(adjData),
-        signal: AbortSignal.timeout(2000)
+        signal: AbortSignal.timeout(8000)
       });
       if (res.ok) return await res.json();
-    } catch {}
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to record adjustment');
+      }
+    } catch (e: any) {
+      if (e.message && e.message !== 'Failed to fetch' && !e.name?.includes('Abort')) throw e;
+    }
 
     const prod = mockStore.products.find(p => p.id === Number(adjData.product_id));
     let level = prod?.stock_levels.find(sl => sl.location_id === Number(adjData.location_id));
@@ -625,7 +812,7 @@ export const api = {
         signal: AbortSignal.timeout(1500)
       });
       if (res.ok) return await res.json();
-    } catch {}
+    } catch { }
     return mockStore.ledger;
   }
 };

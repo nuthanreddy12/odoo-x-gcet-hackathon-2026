@@ -3,28 +3,41 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend
 } from 'recharts';
 
-const SAMPLE_TREND = [
-  { day: 'Mon', receipts: 25, deliveries: 18, transfers: 5 },
-  { day: 'Tue', receipts: 40, deliveries: 22, transfers: 8 },
-  { day: 'Wed', receipts: 15, deliveries: 30, transfers: 12 },
-  { day: 'Thu', receipts: 50, deliveries: 35, transfers: 6 },
-  { day: 'Fri', receipts: 35, deliveries: 42, transfers: 15 },
-  { day: 'Sat', receipts: 10, deliveries: 12, transfers: 3 },
-  { day: 'Sun', receipts: 5, deliveries: 4, transfers: 2 },
-];
+import { MovementTrend } from '../../types';
 
-export const MovementSummary: React.FC = () => {
+interface MovementSummaryProps {
+  trends?: MovementTrend[];
+}
+
+export const MovementSummary: React.FC<MovementSummaryProps> = ({ trends }) => {
+  const chartData = (trends && trends.length > 0)
+    ? trends.map(t => ({
+        day: t.date,
+        receipts: t.receipts,
+        deliveries: t.deliveries,
+        transfers: t.transfers
+      }))
+    : [
+        { day: 'Mon', receipts: 0, deliveries: 0, transfers: 0 },
+        { day: 'Tue', receipts: 0, deliveries: 0, transfers: 0 },
+        { day: 'Wed', receipts: 0, deliveries: 0, transfers: 0 },
+        { day: 'Thu', receipts: 0, deliveries: 0, transfers: 0 },
+        { day: 'Fri', receipts: 0, deliveries: 0, transfers: 0 },
+        { day: 'Sat', receipts: 0, deliveries: 0, transfers: 0 },
+        { day: 'Sun', receipts: 0, deliveries: 0, transfers: 0 },
+      ];
+
   return (
     <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h4 className="text-sm font-semibold text-slate-900">Inventory Movement Velocity</h4>
-          <p className="text-xs text-slate-500">Inbound receipts vs outbound deliveries</p>
+          <p className="text-xs text-slate-500">Real-time inbound receipts vs outbound deliveries (Last 7 Days)</p>
         </div>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={SAMPLE_TREND} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="receiptGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#16a34a" stopOpacity={0.2} />

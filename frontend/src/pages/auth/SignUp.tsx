@@ -11,12 +11,13 @@ export const SignUp: React.FC<SignUpProps> = ({ onNavigateLogin }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('inventory_manager');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await signup(email, password, name);
+    await signup(email, password, name, role);
     setLoading(false);
   };
 
@@ -67,6 +68,18 @@ export const SignUp: React.FC<SignUpProps> = ({ onNavigateLogin }) => {
               className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
               placeholder="••••••••"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Account Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
+            >
+              <option value="inventory_manager">Inventory Manager (Full Access)</option>
+              <option value="warehouse_staff">Warehouse Staff (Operational Access)</option>
+            </select>
           </div>
 
           <button
