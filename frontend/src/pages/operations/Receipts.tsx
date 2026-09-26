@@ -395,8 +395,8 @@ export const Receipts: React.FC<ReceiptsProps> = ({ initialProductToReceive }) =
                       <td className="py-3 px-4 font-mono text-slate-500 text-[11px]">{item.product_sku}</td>
                       <td className="py-3 px-4 text-slate-600">{item.location_name || 'Designated Warehouse Location'}</td>
                       <td className="py-3 px-4 text-right font-bold text-slate-900">+{item.quantity}</td>
-                      <td className="py-3 px-4 text-right text-slate-600">${Number(item.unit_cost || 0).toFixed(2)}</td>
-                      <td className="py-3 px-4 text-right font-semibold text-slate-900">${subtotal.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right text-slate-600">₹{Number(item.unit_cost || 0).toFixed(2)}</td>
+                      <td className="py-3 px-4 text-right font-semibold text-slate-900">₹{subtotal.toFixed(2)}</td>
                     </tr>
                   );
                 })}
@@ -406,7 +406,7 @@ export const Receipts: React.FC<ReceiptsProps> = ({ initialProductToReceive }) =
                   <td colSpan={4} className="py-3 px-4 text-right uppercase text-[10px] text-slate-500">Totals:</td>
                   <td className="py-3 px-4 text-right text-slate-900 font-black">{totalQty} units</td>
                   <td className="py-3 px-4"></td>
-                  <td className="py-3 px-4 text-right text-brand-700 text-sm font-black">${totalCost.toFixed(2)}</td>
+                  <td className="py-3 px-4 text-right text-brand-700 text-sm font-black">₹{totalCost.toFixed(2)}</td>
                 </tr>
               </tfoot>
             </table>
@@ -872,7 +872,7 @@ export const Receipts: React.FC<ReceiptsProps> = ({ initialProductToReceive }) =
                         newItems[idx].unit_cost = e.target.value;
                         setItems(newItems);
                       }}
-                      placeholder="Cost $"
+                      placeholder="Cost ₹"
                       className="w-full px-2 py-1.5 border border-slate-200 rounded bg-white text-right"
                     />
                   </div>

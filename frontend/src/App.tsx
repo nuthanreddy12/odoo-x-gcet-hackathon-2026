@@ -40,45 +40,47 @@ const MainApp: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased">
+    <div className="h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased overflow-hidden">
       <Navbar onNavigateProfile={() => setCurrentTab('profile')} />
 
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         <Sidebar
           currentTab={currentTab}
           onTabChange={setCurrentTab}
           lowStockCount={2}
         />
 
-        <main className="flex-1 p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
-          {currentTab === 'dashboard' && (
-            <Dashboard
-              onNavigateTab={setCurrentTab}
-              onQuickReceipt={(prod) => {
-                setQuickReceiptProduct(prod);
-                setCurrentTab('receipts');
-              }}
-            />
-          )}
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-6 lg:p-8 max-w-7xl mx-auto w-full">
+            {currentTab === 'dashboard' && (
+              <Dashboard
+                onNavigateTab={setCurrentTab}
+                onQuickReceipt={(prod) => {
+                  setQuickReceiptProduct(prod);
+                  setCurrentTab('receipts');
+                }}
+              />
+            )}
 
-          {currentTab === 'stock' && <StockView onNavigateTab={setCurrentTab} />}
+            {currentTab === 'stock' && <StockView onNavigateTab={setCurrentTab} />}
 
-          {currentTab === 'products' && <ProductList onNavigateTab={setCurrentTab} />}
+            {currentTab === 'products' && <ProductList onNavigateTab={setCurrentTab} />}
 
-          {currentTab === 'receipts' && (
-            <Receipts initialProductToReceive={quickReceiptProduct} />
-          )}
+            {currentTab === 'receipts' && (
+              <Receipts initialProductToReceive={quickReceiptProduct} />
+            )}
 
-          {currentTab === 'deliveries' && <Deliveries />}
+            {currentTab === 'deliveries' && <Deliveries />}
 
-          {currentTab === 'transfers' && <Transfers />}
+            {currentTab === 'transfers' && <Transfers />}
 
-          {currentTab === 'adjustments' && <Adjustments />}
+            {currentTab === 'adjustments' && <Adjustments />}
 
-          {currentTab === 'ledger' && <StockLedger />}
+            {currentTab === 'ledger' && <StockLedger />}
 
-          {currentTab === 'warehouses' && <Warehouses />}
-          {currentTab === 'profile' && <Profile onNavigateTab={setCurrentTab} />}
+            {currentTab === 'warehouses' && <Warehouses />}
+            {currentTab === 'profile' && <Profile onNavigateTab={setCurrentTab} />}
+          </div>
         </main>
       </div>
     </div>

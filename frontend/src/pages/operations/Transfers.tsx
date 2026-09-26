@@ -117,7 +117,7 @@ export const Transfers: React.FC = () => {
       <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800">
         <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
         <div>
-          <span className="font-bold">Total Stock Invariant Enforced:</span> Relocations deduct from source and credit destination in an atomic transaction (&Delta;TotalCompanyStock = 0).
+          <span className="font-bold">Inventory Integrity Protected:</span> Stock transfers automatically maintain accurate total inventory.
         </div>
       </div>
 

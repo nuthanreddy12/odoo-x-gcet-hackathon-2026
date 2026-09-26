@@ -123,7 +123,7 @@ export const PrintDocumentModal: React.FC<PrintDocumentModalProps> = ({
                     <td className="py-2 px-3 border border-slate-200 text-slate-600">{item.location_name || 'Designated Location'}</td>
                     <td className="py-2 px-3 border border-slate-200 text-right font-bold text-slate-900">{item.quantity}</td>
                     {isReceipt && (
-                      <td className="py-2 px-3 border border-slate-200 text-right text-slate-600">${Number(item.unit_cost || 0).toFixed(2)}</td>
+                      <td className="py-2 px-3 border border-slate-200 text-right text-slate-600">₹{Number(item.unit_cost || 0).toFixed(2)}</td>
                     )}
                   </tr>
                 ))}

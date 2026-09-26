@@ -42,8 +42,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, lowSt
   const visibleNavItems = allNavItems.filter(item => !item.managerOnly || isManager);
 
   return (
-    <aside className="w-64 border-r border-slate-200 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 min-h-[calc(100vh-4rem)]">
-      <div className="p-4 space-y-5">
+    <aside className="w-64 border-r border-slate-800 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 h-full">
+      <div className="px-3.5 pt-3 pb-4 space-y-4 overflow-y-auto flex-1">
         {/* Navigation Section */}
         <div>
           <p className="px-3 text-[11px] font-semibold tracking-wider text-slate-400 uppercase mb-2">
@@ -96,17 +96,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, lowSt
             </button>
           </div>
         )}
-      </div>
-
-      {/* System Status Footer */}
-      <div className="p-4 border-t border-slate-800">
-        <div className="flex items-center justify-between text-[11px] text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Ledger Synchronized
-          </span>
-          <span className="font-mono text-[10px] bg-slate-800 px-1.5 py-0.5 rounded">v1.0</span>
-        </div>
       </div>
     </aside>
   );

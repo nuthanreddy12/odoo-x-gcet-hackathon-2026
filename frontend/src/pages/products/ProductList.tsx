@@ -212,7 +212,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onNavigateTab }) => {
                     </td>
                     <td className="px-5 py-3.5 text-slate-600">{p.uom}</td>
                     <td className="px-5 py-3.5 text-right font-medium text-slate-900">
-                      ${Number(p.unit_price).toFixed(2)}
+                      ₹{Number(p.unit_price).toFixed(2)}
                     </td>
                     <td className="px-5 py-3.5 text-right font-bold text-slate-900 text-sm">
                       {p.total_stock}
@@ -310,7 +310,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onNavigateTab }) => {
               </select>
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Unit Price ($)</label>
+              <label className="block font-semibold text-slate-700 mb-1">Unit Price (₹)</label>
               <input
                 type="number"
                 step="0.01"

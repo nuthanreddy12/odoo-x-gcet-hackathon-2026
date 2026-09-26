@@ -6,7 +6,7 @@ import { Badge } from '../../components/common/Badge';
 import {
   Boxes, Search, Filter, SlidersHorizontal, RefreshCw,
   ArrowUpDown, AlertTriangle, CheckCircle, MapPin, Tag,
-  DollarSign, PackageCheck, ShieldAlert, Plus, Sparkles
+  IndianRupee, PackageCheck, ShieldAlert, Plus, Sparkles
 } from 'lucide-react';
 import { NavTab } from '../../components/common/Sidebar';
 
@@ -458,12 +458,12 @@ export const StockView: React.FC<StockViewProps> = ({ onNavigateTab }) => {
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-medium">Inventory Valuation</span>
             <span className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600">
-              <DollarSign className="w-4 h-4" />
+              <IndianRupee className="w-4 h-4" />
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold text-slate-900">
-              ${metrics.totalValuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ₹{metrics.totalValuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
           <p className="text-[11px] text-slate-500 mt-1">At active per-unit cost bases</p>
@@ -722,7 +722,7 @@ export const StockView: React.FC<StockViewProps> = ({ onNavigateTab }) => {
 
                       {/* Per-Unit Cost */}
                       <td className="px-5 py-3.5 text-right font-medium text-slate-800">
-                        ${row.unitPrice.toFixed(2)}
+                        ₹{row.unitPrice.toFixed(2)}
                       </td>
 
                       {/* On Hand */}
@@ -805,7 +805,7 @@ export const StockView: React.FC<StockViewProps> = ({ onNavigateTab }) => {
                 <div className="mt-1 text-[11px] text-slate-500 flex items-center gap-2">
                   <span>Category: {targetProduct.category_name}</span>
                   <span>&bull;</span>
-                  <span>Cost: ${Number(targetProduct.unit_price).toFixed(2)}</span>
+                  <span>Cost: ₹{Number(targetProduct.unit_price).toFixed(2)}</span>
                 </div>
               )}
             </div>
@@ -861,7 +861,7 @@ export const StockView: React.FC<StockViewProps> = ({ onNavigateTab }) => {
               </div>
               <span className="text-[10px] text-slate-400">
                 {calculatedDifference !== 0 && targetProduct ? (
-                  `$${Math.abs(financialVariance).toFixed(2)} impact`
+                  `₹${Math.abs(financialVariance).toFixed(2)} impact`
                 ) : 'Zero variance'}
               </span>
             </div>
