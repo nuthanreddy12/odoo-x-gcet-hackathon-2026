@@ -14,6 +14,7 @@ import { Adjustments } from './pages/operations/Adjustments';
 import { StockLedger } from './pages/StockLedger';
 import { Warehouses } from './pages/Warehouses';
 import { StockView } from './pages/inventory/StockView';
+import { Profile } from './pages/Profile';
 import { Product } from './types';
 
 const MainApp: React.FC = () => {
@@ -40,7 +41,7 @@ const MainApp: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased">
-      <Navbar />
+      <Navbar onNavigateProfile={() => setCurrentTab('profile')} />
 
       <div className="flex flex-1">
         <Sidebar
@@ -77,6 +78,7 @@ const MainApp: React.FC = () => {
           {currentTab === 'ledger' && <StockLedger />}
 
           {currentTab === 'warehouses' && <Warehouses />}
+          {currentTab === 'profile' && <Profile onNavigateTab={setCurrentTab} />}
         </main>
       </div>
     </div>

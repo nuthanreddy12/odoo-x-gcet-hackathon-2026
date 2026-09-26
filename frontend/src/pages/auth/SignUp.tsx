@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Boxes, ArrowRight } from 'lucide-react';
+import { Boxes, ArrowRight, AlertCircle } from 'lucide-react';
 
 interface SignUpProps {
   onNavigateLogin: () => void;
@@ -13,24 +13,36 @@ export const SignUp: React.FC<SignUpProps> = ({ onNavigateLogin }) => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('inventory_manager');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await signup(email, password, name, role);
+    setError(null);
+    const success = await signup(email, password, name, role);
+    if (!success) {
+      setError('Registration failed. The email address might already be registered.');
+    }
     setLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-2xl border border-slate-100">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-500/30 mb-3">
             <Boxes className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Create StockSense Account</h1>
           <p className="text-xs text-slate-500 mt-1">Join your organization's inventory management portal</p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+            <span>{error}</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

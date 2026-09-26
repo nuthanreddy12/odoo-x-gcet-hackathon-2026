@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Boxes, ArrowLeft, KeyRound, CheckCircle } from 'lucide-react';
+import { Boxes, ArrowLeft, KeyRound, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface ForgotPasswordProps {
   onNavigateLogin: () => void;
 }
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onNavigateLogin }) => {
   const [email, setEmail] = useState('admin@stocksense.io');
@@ -12,27 +14,60 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onNavigateLogin 
   const [demoGeneratedOtp, setDemoGeneratedOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleRequestOtp = (e: React.FormEvent) => {
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate or call backend OTP generation
-    setTimeout(() => {
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const generated = data.demo_otp || Math.floor(100000 + Math.random() * 900000).toString();
+        setDemoGeneratedOtp(generated);
+        setOtp(generated);
+        setStep('VERIFY');
+      } else {
+        const err = await res.json().catch(() => ({ detail: 'Failed to request reset OTP' }));
+        setError(err.detail || 'Failed to generate OTP. Please try again.');
+      }
+    } catch {
+      // Local fallback
       const generated = Math.floor(100000 + Math.random() * 900000).toString();
       setDemoGeneratedOtp(generated);
-      setOtp(generated); // pre-populate for demo ease
+      setOtp(generated);
       setStep('VERIFY');
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
-  const handleResetPassword = (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, new_password: newPassword })
+      });
+      if (res.ok) {
+        setStep('SUCCESS');
+      } else {
+        const err = await res.json().catch(() => ({ detail: 'Failed to reset password' }));
+        setError(err.detail || 'Password reset failed. Invalid or expired OTP.');
+      }
+    } catch {
       setStep('SUCCESS');
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   return (
@@ -49,6 +84,13 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onNavigateLogin 
             {step === 'SUCCESS' && 'Your credentials have been securely updated.'}
           </p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+            <span>{error}</span>
+          </div>
+        )}
 
         {step === 'REQUEST' && (
           <form onSubmit={handleRequestOtp} className="space-y-4">

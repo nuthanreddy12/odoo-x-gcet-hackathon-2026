@@ -14,7 +14,8 @@ export type NavTab =
   | 'transfers'
   | 'adjustments'
   | 'ledger'
-  | 'warehouses';
+  | 'warehouses'
+  | 'profile';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -44,10 +45,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, lowSt
     <aside className="w-64 border-r border-slate-200 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 min-h-[calc(100vh-4rem)]">
       <div className="p-4 space-y-5">
         {/* User Role Banner */}
-        <div className="px-3 py-2 bg-slate-800/80 rounded-lg border border-slate-700/60 flex items-center justify-between">
+        <div
+          onClick={() => onTabChange('profile')}
+          className="px-3 py-2 bg-slate-800/80 rounded-lg border border-slate-700/60 flex items-center justify-between cursor-pointer hover:bg-slate-800 transition-colors group"
+          title="Click to view My Profile"
+        >
           <div className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full ${isManager ? 'bg-indigo-400' : 'bg-cyan-400'}`}></span>
-            <span className="text-[11px] font-semibold text-slate-200">
+            <span className="text-[11px] font-semibold text-slate-200 group-hover:text-white transition-colors">
               {isManager ? 'Inventory Manager' : 'Warehouse Staff'}
             </span>
           </div>

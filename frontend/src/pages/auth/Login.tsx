@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Boxes, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { Boxes, ArrowRight, ShieldCheck, Zap, AlertCircle } from 'lucide-react';
 
 interface LoginProps {
   onNavigateSignUp: () => void;
@@ -12,24 +12,54 @@ export const Login: React.FC<LoginProps> = ({ onNavigateSignUp, onNavigateForgot
   const [email, setEmail] = useState('admin@stocksense.io');
   const [password, setPassword] = useState('admin123');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await login(email, password);
+    setError(null);
+    const success = await login(email, password);
+    if (!success) {
+      setError('Invalid credentials. Please check your email and password.');
+    }
+    setLoading(false);
+  };
+
+  const handleDemoManager = async () => {
+    setLoading(true);
+    setError(null);
+    setEmail('admin@stocksense.io');
+    setPassword('admin123');
+    await demoLogin();
+    setLoading(false);
+  };
+
+  const handleDemoStaff = async () => {
+    setLoading(true);
+    setError(null);
+    setEmail('staff@stocksense.io');
+    setPassword('staff123');
+    await demoLoginStaff();
     setLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-2xl border border-slate-100">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-500/30 mb-3">
             <Boxes className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Welcome to StockSense</h1>
           <p className="text-xs text-slate-500 mt-1">Enterprise Inventory & Warehouse Management System</p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+            <span>{error}</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -85,8 +115,9 @@ export const Login: React.FC<LoginProps> = ({ onNavigateSignUp, onNavigateForgot
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            onClick={demoLogin}
-            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 text-xs font-medium rounded-lg transition-colors border border-indigo-200/80"
+            disabled={loading}
+            onClick={handleDemoManager}
+            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 text-xs font-medium rounded-lg transition-colors border border-indigo-200/80 disabled:opacity-50 cursor-pointer"
           >
             <Zap className="w-3.5 h-3.5 text-indigo-600" />
             <span>Inventory Manager</span>
@@ -94,8 +125,9 @@ export const Login: React.FC<LoginProps> = ({ onNavigateSignUp, onNavigateForgot
 
           <button
             type="button"
-            onClick={demoLoginStaff}
-            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-cyan-50 hover:bg-cyan-100 text-cyan-900 text-xs font-medium rounded-lg transition-colors border border-cyan-200/80"
+            disabled={loading}
+            onClick={handleDemoStaff}
+            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-cyan-50 hover:bg-cyan-100 text-cyan-900 text-xs font-medium rounded-lg transition-colors border border-cyan-200/80 disabled:opacity-50 cursor-pointer"
           >
             <Zap className="w-3.5 h-3.5 text-cyan-600" />
             <span>Warehouse Staff</span>

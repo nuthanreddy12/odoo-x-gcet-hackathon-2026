@@ -20,14 +20,15 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('stocksense_user');
-    return saved ? JSON.parse(saved) : {
-      id: 1,
-      email: 'admin@stocksense.io',
-      full_name: 'Alex Morgan',
-      role: 'admin',
-      is_active: true,
-      created_at: new Date().toISOString()
-    };
+    const token = localStorage.getItem('stocksense_token');
+    if (saved && token && token !== 'demo-jwt-token-stocksense') {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
   });
 
   const isManager = user?.role === 'admin' || user?.role === 'inventory_manager';
@@ -48,22 +49,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('stocksense_token', data.access_token);
         return true;
       }
+      return false;
     } catch {
-      // Backend unavailable; fallback to local session
+      // Backend unavailable; fallback only for local demo development
+      if (email === 'admin@stocksense.io' || email === 'staff@stocksense.io') {
+        const defaultRole = email.includes('staff') ? 'warehouse_staff' : 'admin';
+        const loggedUser: User = {
+          id: email.includes('staff') ? 2 : 1,
+          email,
+          full_name: email.includes('staff') ? 'Sam Taylor' : 'Alex Morgan',
+          role: defaultRole,
+          is_active: true,
+          created_at: new Date().toISOString()
+        };
+        setUser(loggedUser);
+        localStorage.setItem('stocksense_user', JSON.stringify(loggedUser));
+        localStorage.setItem('stocksense_token', 'demo-jwt-token-stocksense');
+        return true;
+      }
+      return false;
     }
-
-    const defaultRole = email.includes('staff') ? 'warehouse_staff' : 'admin';
-    const loggedUser: User = {
-      id: email.includes('staff') ? 2 : 1,
-      email,
-      full_name: email.split('@')[0],
-      role: defaultRole,
-      is_active: true,
-      created_at: new Date().toISOString()
-    };
-    setUser(loggedUser);
-    localStorage.setItem('stocksense_user', JSON.stringify(loggedUser));
-    return true;
   };
 
   const signup = async (email: string, pass: string, name: string, role: string = 'inventory_manager'): Promise<boolean> => {
@@ -86,27 +91,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('stocksense_token', data.access_token);
         return true;
       }
+      return false;
     } catch {
-      // Backend unavailable; fallback to local session
+      return false;
     }
-
-    const newUser: User = {
-      id: Date.now(),
-      email,
-      full_name: name,
-      role,
-      is_active: true,
-      created_at: new Date().toISOString()
-    };
-    setUser(newUser);
-    localStorage.setItem('stocksense_user', JSON.stringify(newUser));
-    return true;
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('stocksense_user');
     localStorage.removeItem('stocksense_token');
+    try {
+      fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST' }).catch(() => {});
+    } catch {}
   };
 
   const demoLogin = () => {
@@ -117,11 +114,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login('staff@stocksense.io', 'staff123');
   };
 
-  // Ensure an existing or default session has a valid backend JWT instead of the fake demo string
+  // Validate existing stored token on mount, if present
   useEffect(() => {
     const existingToken = localStorage.getItem('stocksense_token');
-    if (!existingToken || existingToken === 'demo-jwt-token-stocksense') {
-      login('admin@stocksense.io', 'admin123');
+    if (existingToken && existingToken !== 'demo-jwt-token-stocksense') {
+      fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${existingToken}`
+        }
+      })
+      .then(res => {
+        if (res.ok) {
+          return res.json();
+        } else if (res.status === 401) {
+          logout();
+        }
+      })
+      .then(userData => {
+        if (userData) {
+          setUser(userData);
+          localStorage.setItem('stocksense_user', JSON.stringify(userData));
+        }
+      })
+      .catch(() => {
+        // Backend temporarily unreachable, retain stored user session
+      });
     }
   }, []);
 

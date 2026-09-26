@@ -6,9 +6,10 @@ import {
 
 interface NavbarProps {
   onSearchChange?: (term: string) => void;
+  onNavigateProfile?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onSearchChange }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onSearchChange, onNavigateProfile }) => {
   const { user, logout, isManager } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -55,13 +56,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchChange }) => {
         <div className="relative">
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-2.5 rounded-lg p-1.5 hover:bg-slate-100 transition-colors"
+            className="flex items-center gap-2.5 rounded-lg p-1.5 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <div className="h-8 w-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-medium text-xs">
-              {user?.full_name?.charAt(0) || 'U'}
+              {user?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div className="hidden md:block text-left">
-              <p className="text-xs font-semibold text-slate-800 leading-none">{user?.full_name || 'Inventory Admin'}</p>
+              <p className="text-xs font-semibold text-slate-800 leading-none">{user?.full_name || 'Inventory User'}</p>
               <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
                 {isManager ? 'Inventory Manager' : 'Warehouse Staff'}
               </p>
@@ -82,9 +83,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchChange }) => {
                 <p className="text-[11px] text-slate-500 truncate mt-0.5">{user?.email}</p>
               </div>
               <div className="py-1">
-                <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-600">
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    onNavigateProfile?.();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  <UserIcon className="w-4 h-4 text-slate-500" />
+                  <span>My Profile</span>
+                </button>
+                <div className="flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Supabase / JWT Active</span>
+                  <span>Backend JWT Active</span>
                 </div>
               </div>
               <div className="border-t border-slate-100 pt-1">
@@ -93,7 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onSearchChange }) => {
                     setShowProfileMenu(false);
                     logout();
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Sign out</span>
