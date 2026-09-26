@@ -44,23 +44,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, lowSt
   return (
     <aside className="w-64 border-r border-slate-200 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 min-h-[calc(100vh-4rem)]">
       <div className="p-4 space-y-5">
-        {/* User Role Banner */}
-        <div
-          onClick={() => onTabChange('profile')}
-          className="px-3 py-2 bg-slate-800/80 rounded-lg border border-slate-700/60 flex items-center justify-between cursor-pointer hover:bg-slate-800 transition-colors group"
-          title="Click to view My Profile"
-        >
-          <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${isManager ? 'bg-indigo-400' : 'bg-cyan-400'}`}></span>
-            <span className="text-[11px] font-semibold text-slate-200 group-hover:text-white transition-colors">
-              {isManager ? 'Inventory Manager' : 'Warehouse Staff'}
-            </span>
-          </div>
-          <span className="text-[9px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-900/60 text-slate-400 border border-slate-700">
-            {isManager ? 'Full Access' : 'Operational'}
-          </span>
-        </div>
-
         {/* Navigation Section */}
         <div>
           <p className="px-3 text-[11px] font-semibold tracking-wider text-slate-400 uppercase mb-2">
@@ -74,11 +57,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onTabChange, lowSt
                 <button
                   key={item.id}
                   onClick={() => onTabChange(item.id)}
-                  className={`flex w-full items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                    isActive
+                  className={`flex w-full items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${isActive
                       ? 'bg-brand-600 text-white shadow-sm font-semibold'
                       : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
